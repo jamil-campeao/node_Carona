@@ -6,7 +6,25 @@ const app = express();
 const prisma = new PrismaClient();
 
 app.use(express.json());
-app.use(cors({origin: '*'}));
+
+// Middleware global para configurar CORS em todas as respostas
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
+    }
+
+    next();
+});
+
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 //Rota para adicionar um destino
 app.post("/destinos", async (req, res) => {
