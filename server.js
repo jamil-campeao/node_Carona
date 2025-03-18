@@ -91,7 +91,7 @@ app.get("/caronas", async (req, res) => {
     res.json(resultado);
 });
 
-// 📌 Rota para calcular o valor proporcional de cada passageiro (incluindo o motorista)
+// Rota para calcular o valor proporcional de cada passageiro
 app.get("/calculo", async (req, res) => {
     const { mes, ano, preco_gasolina, carro_km } = req.query;
 
@@ -126,7 +126,7 @@ app.get("/calculo", async (req, res) => {
             },
         });
 
-        // 🔹 Organizar caronas por dia (quem pegou carona naquele dia)
+        // Organizar caronas por dia (quem pegou carona naquele dia)
         const caronasPorDia = {};
 
         caronas.forEach(({ passageiro, CAR_DATA }) => {
@@ -137,12 +137,12 @@ app.get("/calculo", async (req, res) => {
             caronasPorDia[dataFormatada].add(passageiro.PAS_NOME);
         });
 
-        // 🔹 Adicionar o motorista a todas as viagens
+        // Adicionar o motorista a todas as viagens
         Object.keys(caronasPorDia).forEach((data) => {
             caronasPorDia[data].add("Jamil");
         });
 
-        // 🔹 Calcular o custo da gasolina para cada dia e dividir entre os passageiros da viagem
+        // Calcular o custo da gasolina para cada dia e dividir entre os passageiros da viagem
         const valoresIndividuais = {};
 
         Object.keys(caronasPorDia).forEach((data) => {
