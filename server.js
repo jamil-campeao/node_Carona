@@ -6,7 +6,9 @@ const app = express();
 const prisma = new PrismaClient();
 
 app.use(cors());
+
 app.use(express.json());
+app.use(cors({origin: '*'}));
 
 //Rota para adicionar um destino
 app.post("/destinos", async (req, res) => {
