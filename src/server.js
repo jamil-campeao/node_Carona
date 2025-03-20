@@ -127,7 +127,7 @@ app.get("/calculo", async (req, res) => {
     const fimMes = new Date(`${ano}-${mes}-31`);
 
     try {
-        // 🔹 Buscar todas as caronas do mês informado
+        // Busco todas as caronas do mês informado
         const caronas = await prisma.carona.findMany({
             where: {
                 CAR_DATA: {
@@ -144,7 +144,7 @@ app.get("/calculo", async (req, res) => {
             },
         });
 
-        // Organizar caronas por dia (quem pegou carona naquele dia)
+        // Organizo as caronas por dia (quem pegou carona naquele dia)
         const caronasPorDia = {};
 
         caronas.forEach(({ passageiro, CAR_DATA }) => {
@@ -160,7 +160,7 @@ app.get("/calculo", async (req, res) => {
             caronasPorDia[data].add("Jamil");
         });
 
-        // Calcular o custo da gasolina para cada dia e dividir entre os passageiros da viagem
+        // Calculo o custo da gasolina para cada dia e divido entre os passageiros da viagem
         const valoresIndividuais = {};
 
         Object.keys(caronasPorDia).forEach((data) => {
@@ -171,7 +171,7 @@ app.get("/calculo", async (req, res) => {
             const consumoPorKm = precoGasolina / mediaCarro;
             const custoViagemDia = consumoPorKm * (distancia_ufsm * 2); // Ida e volta
 
-            // Dividir o custo entre todos os passageiros do dia
+            // Divido o custo entre todos os passageiros que foram no dia
             const custoPorPessoa = custoViagemDia / numPessoasNaViagem;
 
             passageirosNaViagem.forEach((pessoa) => {
@@ -183,7 +183,7 @@ app.get("/calculo", async (req, res) => {
             });
         });
 
-        // 🔹 Retornar o resultado final
+        // Resultado final
         res.json({
             precoGasolina,
             mediaCarro,
@@ -197,6 +197,54 @@ app.get("/calculo", async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: "Erro ao calcular valores." });
+    }
+});
+
+app.get("/quantidadesviagensdia", async (req, res) => {
+    const { mes, ano, dia } = req.query;
+
+    // Validações
+    if (!mes || !ano || !dia) {
+        return res.status(400).json({ error: "Mês, ano e dia são obrigatórios." });
+    }
+
+    const dataCompleta = new Date(`${ano}-${mes}-${dia}T00:00:00.000Z`);
+
+    try {
+        // Busco todas as caronas no dia informado
+        const caronas = await prisma.carona.findMany({
+            where: {
+                CAR_DATA: {
+                    gte: dataCompleta, // Início do dia
+                    lt: new Date(dataCompleta.getTime() + 24 * 60 * 60 * 1000), // Fim do dia
+                },
+            },
+            include: {
+                passageiro: true,
+            },
+            orderBy: {
+                CAR_DATA: "asc",
+            },
+        });
+
+        // Organizo as caronas por passageiro
+        const quantidadesIndividuais = {};
+
+        caronas.forEach(({ passageiro }) => {
+            const nomePassageiro = passageiro.PAS_NOME;
+            if (!quantidadesIndividuais[nomePassageiro]) {
+                quantidadesIndividuais[nomePassageiro] = { viagens: 0 };
+            }
+            quantidadesIndividuais[nomePassageiro].viagens += 1;
+        });
+
+        // Resultado
+        res.json({ quantidades: quantidadesIndividuais });
+    } 
+    
+    catch (error) {
+        console.error("Erro ao executar requisição:", error);
+        res.status(500).json({ error: `Erro ao executar requisição: ${error.message}` });
     }
 });
 
