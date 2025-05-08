@@ -1,3 +1,5 @@
+import prisma from "../db/client.js";
+
 // Rota para calcular o valor proporcional de cada passageiro
 export const getCalculo = async (req, res) => {
     const { mes, ano, preco_gasolina, carro_km } = req.query;
@@ -85,7 +87,7 @@ export const getCalculo = async (req, res) => {
             }, {}),
         });
     } catch (error) {
-        res.status(500).json({ error: "Erro ao calcular valores." });
+        res.status(500).json({ error: `Erro ao calcular valores: ${error.message} ` });
     }
 };
 
@@ -98,7 +100,7 @@ export const getQuantidadesViagensDia = async (req, res) => {
     }
 
     const dataCompleta = new Date(`${ano}-${mes}-${dia} 00:00:00`);
-    
+
     try {
         // Busco todas as caronas no dia informado
         const caronas = await prisma.carona.findMany({
