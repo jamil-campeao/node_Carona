@@ -1,116 +1,5 @@
-const express = require("express");
-const cors = require("cors");
-const { PrismaClient } = require("@prisma/client");
-
-const app = express();
-const prisma = new PrismaClient();
-
-app.use(express.json());
-
-// Middleware global para configurar CORS em todas as respostas
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    
-    if (req.method === "OPTIONS") {
-        return res.sendStatus(200);
-    }
-
-    next();
-});
-
-app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-//Rota para adicionar um destino
-app.post("/destinos", async (req, res) => {
-    const { DES_NOME } = req.body;
-
-    try {
-        const destino = await prisma.destino.create({data: { DES_NOME }});
-        res.json(destino);
-    }
-    catch (error) {
-        res.status(400).json({error: "Destino já existe!"});
-    }
-});
-
-//Rota para registrar uma carona
-app.post("/caronas", async (req, res) => {
-    const { PAS_ID, DES_ID, CAR_DATA } = req.body;
-
-    try {
-        // 🔹 Converter a data para formato padrão "YYYY-MM-DD"
-        const dataFormatada = new Date(CAR_DATA).toISOString().split("T")[0];
-
-        // 🔹 Verificar se já existe uma carona com os mesmos dados
-        const caronaExistente = await prisma.carona.findFirst({
-            where: {
-                PAS_ID: PAS_ID,
-                DES_ID: DES_ID,
-                CAR_DATA: {
-                    gte: new Date(`${dataFormatada}T00:00:00.000Z`),
-                    lte: new Date(`${dataFormatada}T23:59:59.999Z`),
-                },
-            },
-        });
-
-        if (caronaExistente) {
-            return res.status(400).json({ error: "Carona já registrada para este passageiro, destino e dia!" });
-        }
-
-        // 🔹 Criar a carona se não houver duplicação
-        const carona = await prisma.carona.create({
-            data: {
-                PAS_ID,
-                DES_ID,
-                CAR_DATA: new Date(CAR_DATA),
-            },
-        });
-
-        res.json(carona);
-    } catch (error) {
-        console.error("Erro ao registrar a carona:", error);
-        res.status(500).json({ error: "Erro ao registrar a carona." });
-    }
-});
-
-app.get("/caronas", async (req, res) => {
-    const { mes, ano } = req.query;
-
-    const inicioMes = new Date(`${ano}-${mes}-01`);
-    const fimMes = new Date(`${ano}-${mes + 1}-01`);
-
-    const caronas = await prisma.carona.findMany({
-        where: {
-            CAR_DATA: {
-                gte: inicioMes,
-                lt: fimMes,
-            },
-        },
-        include: {
-            passageiro: true,
-            destino: true,
-        },
-    });
-
-    //Agrupo os dados por destino
-    const resultado = {};
-    caronas.forEach(({passageiro, destino}) => {
-        if (!resultado[destino.DES_NOME]) resultado[destino.DES_NOME] = {};
-        if (!resultado[destino.DES_NOME][passageiro.PAS_NOME]) resultado[destino.DES_NOME][passageiro.PAS_NOME] = 0;
-        resultado[destino.DES_NOME][passageiro.PAS_NOME] += 1;
-    });
-
-    res.json(resultado);
-});
-
 // Rota para calcular o valor proporcional de cada passageiro
-app.get("/calculo", async (req, res) => {
+export const getCalculo = async (req, res) => {
     const { mes, ano, preco_gasolina, carro_km } = req.query;
 
     // Valores padrão caso não sejam informados na query
@@ -198,9 +87,9 @@ app.get("/calculo", async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: "Erro ao calcular valores." });
     }
-});
+};
 
-app.get("/quantidadesviagensdia", async (req, res) => {
+export const getQuantidadesViagensDia = async (req, res) => {
     const { mes, ano, dia } = req.query;
 
     // Validações
@@ -208,15 +97,14 @@ app.get("/quantidadesviagensdia", async (req, res) => {
         return res.status(400).json({ error: "Mês, ano e dia são obrigatórios." });
     }
 
-    const dataCompleta = new Date(`${ano}-${mes}-${dia}T00:00:00.000Z`);
-
+    const dataCompleta = new Date(`${ano}-${mes}-${dia} 00:00:00`);
+    
     try {
         // Busco todas as caronas no dia informado
         const caronas = await prisma.carona.findMany({
             where: {
                 CAR_DATA: {
-                    gte: dataCompleta, // Início do dia
-                    lt: new Date(dataCompleta.getTime() + 24 * 60 * 60 * 1000), // Fim do dia
+                    equals: dataCompleta, // Início do dia
                 },
             },
             include: {
@@ -246,10 +134,4 @@ app.get("/quantidadesviagensdia", async (req, res) => {
         console.error("Erro ao executar requisição:", error);
         res.status(500).json({ error: `Erro ao executar requisição: ${error.message}` });
     }
-});
-
-
-
-app.listen(3001, () => {
-    console.log("Servidor no ar na porta 3001");
-})
+};
