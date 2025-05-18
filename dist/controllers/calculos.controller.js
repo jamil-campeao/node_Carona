@@ -93,7 +93,7 @@ var getCalculo = exports.getCalculo = /*#__PURE__*/function () {
           });
 
           // Resultado final
-          res.json({
+          res.status(200).json({
             precoGasolina: precoGasolina,
             mediaCarro: mediaCarro,
             detalhesPassageiros: Object.keys(valoresIndividuais).reduce(function (acc, pessoa) {

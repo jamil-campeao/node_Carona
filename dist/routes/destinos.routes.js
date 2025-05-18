@@ -7,5 +7,6 @@ exports["default"] = void 0;
 var _express = require("express");
 var _destinosController = require("../controllers/destinos.controller.js");
 var router = (0, _express.Router)();
-router.use("/", _destinosController.postDestino);
+router.post("/", _destinosController.postDestino);
+router.get("/", _destinosController.getDestino);
 var _default = exports["default"] = router;

@@ -5,5 +5,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = void 0;
 var _express = require("express");
+var _passageirosController = require("../controllers/passageiros.controller.js");
 var router = (0, _express.Router)();
+router.get("/", _passageirosController.getPassageiros);
+router.post("/", _passageirosController.postPassageiro);
 var _default = exports["default"] = router;
