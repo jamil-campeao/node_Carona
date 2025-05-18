@@ -11,8 +11,8 @@ export const postCaronas = async (req, res) => {
         // Verifico se já existe uma carona com os mesmos dados
         const caronaExistente = await prisma.carona.findFirst({
             where: {
-                PAS_ID: PAS_ID,
-                DES_ID: DES_ID,
+                PAS_ID: parseInt(PAS_ID),
+                DES_ID: parseInt(DES_ID),
                 CAR_DATA: {
                     gte: new Date(`${dataFormatada}T00:00:00.000Z`),
                     lte: new Date(`${dataFormatada}T23:59:59.999Z`),
@@ -27,16 +27,16 @@ export const postCaronas = async (req, res) => {
         // Crio a carona se não houver duplicação
         const carona = await prisma.carona.create({
             data: {
-                PAS_ID,
-                DES_ID,
+                PAS_ID: parseInt(PAS_ID),
+                DES_ID: parseInt(DES_ID),
                 CAR_DATA: new Date(CAR_DATA),
             },
         });
 
-        res.json(carona);
+        res.status(201).json(carona);
     } catch (error) {
         console.error("Erro ao registrar a carona:", error);
-        res.status(500).json({ error: "Erro ao registrar a carona." });
+        res.status(500).json({message: error});
     }
 };
 
@@ -67,5 +67,40 @@ export const getCaronas =  async (req, res) => {
         resultado[destino.DES_NOME][passageiro.PAS_NOME] += 1;
     });
 
-    res.json(resultado);
+    res.status(200).json(resultado);
+};
+
+export const getCaronasDoDia = async (req, res) => {
+    const {data} = req.params;
+
+    if (!data) {
+        return res.status(400).json({error: "Data é obrigatória"});
+    }
+
+    try {
+        const start = new Date(data);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(data);
+        end.setHours(23, 59, 59, 999);
+
+        const caronasDoDia = await prisma.carona.findMany({
+            where: {
+            CAR_DATA: {
+                gte: start,
+                lte: end,
+            },
+            },
+            include: {
+                destino: true,
+                passageiro: true,
+            },
+        });
+
+        return res.status(200).json(caronasDoDia);
+
+    }
+    catch(error) {
+        console.error(error);
+        return res.status(500).json({ error: "Erro ao buscar caronas" });
+    }
 };

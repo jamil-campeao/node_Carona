@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { postDestino } from '../controllers/destinos.controller.js';
+import { getDestino, postDestino } from '../controllers/destinos.controller.js';
 
 const router = Router();
 
-router.use("/", postDestino);
+router.post("/", postDestino);
+router.get("/", getDestino);
 
 export default router;

@@ -6,9 +6,24 @@ export const postDestino =  async (req, res) => {
 
     try {
         const destino = await prisma.destino.create({data: { DES_NOME }});
-        res.json(destino);
+        res.status(201).json(destino);
     }
     catch (error) {
         res.status(400).json({error: "Destino já existe!"});
     }
 };
+
+//Rota para retornar os destinos
+export const getDestino = async (req, res) => {
+    try {
+        const destinos = await prisma.destino.findMany();
+
+        if (!destinos) {
+            return res.status(500).json({error: "Erro ao retornar destinos"});
+        }
+
+        return res.status(200).json(destinos);
+    } catch (error) {
+        return res.status(500).json({error: "Erro ao retornar destinos"});
+    }
+}
