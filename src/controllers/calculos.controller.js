@@ -75,7 +75,7 @@ export const getCalculo = async (req, res) => {
         });
 
         // Resultado final
-        res.json({
+        res.status(200).json({
             precoGasolina,
             mediaCarro,
             detalhesPassageiros: Object.keys(valoresIndividuais).reduce((acc, pessoa) => {

@@ -104,3 +104,20 @@ export const getCaronasDoDia = async (req, res) => {
         return res.status(500).json({ error: "Erro ao buscar caronas" });
     }
 };
+
+export const deleteCarona = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const caronaExcluida = await prisma.carona.delete({
+            where: {
+                CAR_ID: parseInt(id)
+            }
+        });
+
+        return res.status(200).json(caronaExcluida);
+
+    } catch (error) {
+        return res.status(500).json({ error: "Erro ao excluir a carona"});
+    }
+}
