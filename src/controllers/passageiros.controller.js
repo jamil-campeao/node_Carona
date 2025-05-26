@@ -13,21 +13,21 @@ export const getPassageiros =  async (req, res) => {
 };
 
 export const postPassageiro = async (req, res) => {
-    const {nome} = req.body;
+    const { nome } = req.body;
     try {
-        const passageiro = await prisma.passageiro.create({data: {
-            PAS_NOME: nome
-        }});
+        const passageiro = await prisma.passageiro.create({
+            data: {
+                PAS_NOME: nome
+            }
+        });
 
-        const data = await passageiro.json();
-
-        if (!data){
-            return res.status(500).json({error: "Erro ao cadastrar passageiro"})
+        if (!passageiro) {
+            return res.status(500).json({ error: "Erro ao cadastrar passageiro" });
         }
 
         return res.status(201).json(passageiro);
     } catch (error) {
-        console.log(error)
-        return res.status(500).json({error: "Erro ao cadastrar novo passageiro"});
+        console.log(error);
+        return res.status(500).json({ error: "Erro ao cadastrar novo passageiro" });
     }
 }
