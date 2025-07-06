@@ -16,12 +16,15 @@ datasource db {
 model Passageiro {
   PAS_ID   Int      @id @default(autoincrement())
   PAS_NOME String   @unique
+  PAS_ATIVO Boolean @default(true)
   caronas  Carona[]
 }
 
 model Destino {
   DES_ID   Int      @id @default(autoincrement())
   DES_NOME String   @unique
+  DES_KM   Decimal? @db.Decimal(4,2)
+  DES_ATIVO Boolean @default(true)
   caronas  Carona[]
 }
 

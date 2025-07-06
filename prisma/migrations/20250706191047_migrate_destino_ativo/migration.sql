@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Destino" ADD COLUMN     "DES_ATIVO" BOOLEAN NOT NULL DEFAULT true;

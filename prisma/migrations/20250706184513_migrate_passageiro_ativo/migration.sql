@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Passageiro" ADD COLUMN     "PAS_ATIVO" BOOLEAN NOT NULL DEFAULT true;

@@ -22,7 +22,7 @@ fValidaConexao();
 var app = (0, _express["default"])();
 app.use(_express["default"].json());
 app.use((0, _cors["default"])({
-  origin: "https://controle-de-caronas.netlify.app",
+  origin: ["https://controle-de-caronas.netlify.app", "http://127.0.0.1:5500"],
   methods: ["GET", "POST", "PUT", "DELETE"]
 }));
 app.use(_indexRoutes["default"]);

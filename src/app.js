@@ -20,7 +20,7 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({
-    origin: "https://controle-de-caronas.netlify.app",
+    origin: ["https://controle-de-caronas.netlify.app", "http://127.0.0.1:5500"],
     methods: ["GET", "POST", "PUT", "DELETE"],
 }));
 
