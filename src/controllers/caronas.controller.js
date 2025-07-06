@@ -21,7 +21,7 @@ export const postCaronas = async (req, res) => {
         });
 
         if (caronaExistente) {
-            return res.status(400).json({ error: "Carona já registrada para este passageiro, destino e dia!" });
+            return res.status(400).json({ message: "Carona já registrada para este passageiro, destino e dia!" });
         }
 
         // Crio a carona se não houver duplicação
@@ -36,7 +36,7 @@ export const postCaronas = async (req, res) => {
         res.status(201).json(carona);
     } catch (error) {
         console.error("Erro ao registrar a carona:", error);
-        res.status(500).json({message: error});
+        res.status(500).json({message: `Erro ao registrar carona: ${error}`});
     }
 };
 
@@ -74,7 +74,7 @@ export const getCaronasDoDia = async (req, res) => {
     const {data} = req.params;
 
     if (!data) {
-        return res.status(400).json({error: "Data é obrigatória"});
+        return res.status(400).json({message: "Data é obrigatória"});
     }
 
     try {
@@ -101,7 +101,7 @@ export const getCaronasDoDia = async (req, res) => {
     }
     catch(error) {
         console.error(error);
-        return res.status(500).json({ error: "Erro ao buscar caronas" });
+        return res.status(500).json({ message: "Erro ao buscar caronas" });
     }
 };
 
@@ -118,6 +118,6 @@ export const deleteCarona = async (req, res) => {
         return res.status(200).json(caronaExcluida);
 
     } catch (error) {
-        return res.status(500).json({ error: "Erro ao excluir a carona"});
+        return res.status(500).json({ message: "Erro ao excluir a carona"});
     }
 }
