@@ -39,7 +39,7 @@ var postCaronas = exports.postCaronas = /*#__PURE__*/function () {
             break;
           }
           return _context.abrupt("return", res.status(400).json({
-            error: "Carona já registrada para este passageiro, destino e dia!"
+            message: "Carona já registrada para este passageiro, destino e dia!"
           }));
         case 8:
           _context.next = 10;
@@ -60,7 +60,7 @@ var postCaronas = exports.postCaronas = /*#__PURE__*/function () {
           _context.t0 = _context["catch"](1);
           console.error("Erro ao registrar a carona:", _context.t0);
           res.status(500).json({
-            message: _context.t0
+            message: "Erro ao registrar carona: ".concat(_context.t0)
           });
         case 18:
         case "end":
@@ -128,7 +128,7 @@ var getCaronasDoDia = exports.getCaronasDoDia = /*#__PURE__*/function () {
             break;
           }
           return _context3.abrupt("return", res.status(400).json({
-            error: "Data é obrigatória"
+            message: "Data é obrigatória"
           }));
         case 3:
           _context3.prev = 3;
@@ -157,7 +157,7 @@ var getCaronasDoDia = exports.getCaronasDoDia = /*#__PURE__*/function () {
           _context3.t0 = _context3["catch"](3);
           console.error(_context3.t0);
           return _context3.abrupt("return", res.status(500).json({
-            error: "Erro ao buscar caronas"
+            message: "Erro ao buscar caronas"
           }));
         case 18:
         case "end":
@@ -190,7 +190,7 @@ var deleteCarona = exports.deleteCarona = /*#__PURE__*/function () {
           _context4.prev = 8;
           _context4.t0 = _context4["catch"](1);
           return _context4.abrupt("return", res.status(500).json({
-            error: "Erro ao excluir a carona"
+            message: "Erro ao excluir a carona"
           }));
         case 11:
         case "end":

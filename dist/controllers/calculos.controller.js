@@ -13,25 +13,24 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 // Rota para calcular o valor proporcional de cada passageiro
 var getCalculo = exports.getCalculo = /*#__PURE__*/function () {
   var _ref = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee(req, res) {
-    var _req$query, mes, ano, preco_gasolina, carro_km, mediaCarro, precoGasolina, distancia_ufsm, inicioMes, fimMes, caronas, caronasPorDia, valoresIndividuais;
+    var _req$query, mes, ano, preco_gasolina, carro_km, mediaCarro, precoGasolina, inicioMes, ultimoDiaDoMes, fimMes, caronas, caronasPorDia, distanciasPorDia, contagemViagensPassageiro, valoresIndividuais;
     return _regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           _req$query = req.query, mes = _req$query.mes, ano = _req$query.ano, preco_gasolina = _req$query.preco_gasolina, carro_km = _req$query.carro_km; // Valores padrão caso não sejam informados na query
           mediaCarro = carro_km ? parseFloat(carro_km) : 9.33;
-          precoGasolina = preco_gasolina ? parseFloat(preco_gasolina) : 6.29; // Valor fictício padrão
-          distancia_ufsm = 9.8; // Distância fixa de ida
-          // Validar entrada
+          precoGasolina = preco_gasolina ? parseFloat(preco_gasolina) : 6.29; // Validações
           if (!(!mes || !ano)) {
-            _context.next = 6;
+            _context.next = 5;
             break;
           }
           return _context.abrupt("return", res.status(400).json({
             error: "Mês e ano são obrigatórios."
           }));
-        case 6:
-          inicioMes = new Date("".concat(ano, "-").concat(mes, "-01"));
-          fimMes = new Date("".concat(ano, "-").concat(mes, "-31"));
+        case 5:
+          inicioMes = new Date("".concat(ano, "-").concat(mes, "-01T00:00:00.000Z"));
+          ultimoDiaDoMes = new Date(parseInt(ano), parseInt(mes), 0).getDate();
+          fimMes = new Date("".concat(ano, "-").concat(mes, "-").concat(ultimoDiaDoMes, "T23:59:59.999Z"));
           _context.prev = 8;
           _context.next = 11;
           return _client["default"].carona.findMany({
@@ -51,34 +50,52 @@ var getCalculo = exports.getCalculo = /*#__PURE__*/function () {
           });
         case 11:
           caronas = _context.sent;
-          // Organizo as caronas por dia (quem pegou carona naquele dia)
-          caronasPorDia = {};
-          caronas.forEach(function (_ref2) {
-            var passageiro = _ref2.passageiro,
-              CAR_DATA = _ref2.CAR_DATA;
-            var dataFormatada = CAR_DATA.toISOString().split("T")[0]; // "YYYY-MM-DD"
+          caronasPorDia = {}; // Para agrupar passageiros únicos por dia (para dividir o custo do carro do dia)
+          distanciasPorDia = {}; // Para armazenar a soma dos KM por dia
+          contagemViagensPassageiro = {}; // Para contar viagens individuais por passageiro
+          // 1. Itero sobre CADA CARONA para agrupar por dia e somar KMs
+          caronas.forEach(function (carona) {
+            var dataFormatada = carona.CAR_DATA.toISOString().split("T")[0];
             if (!caronasPorDia[dataFormatada]) {
               caronasPorDia[dataFormatada] = new Set();
+              distanciasPorDia[dataFormatada] = 0;
             }
-            caronasPorDia[dataFormatada].add(passageiro.PAS_NOME);
+
+            // Adiciono o passageiro ao Set para garantir unicidade no dia (para o custo do carro do dia)
+            caronasPorDia[dataFormatada].add(carona.passageiro.PAS_NOME);
+
+            // Somo os KM de TODAS as caronas do dia
+            distanciasPorDia[dataFormatada] += parseFloat(carona.destino.DES_KM);
+
+            // CONTADOR DE VIAGENS INDIVIDUAL POR PASSAGEIRO:
+            if (!contagemViagensPassageiro[carona.passageiro.PAS_NOME]) {
+              contagemViagensPassageiro[carona.passageiro.PAS_NOME] = 0;
+            }
+            contagemViagensPassageiro[carona.passageiro.PAS_NOME]++;
           });
 
-          // Adicionar o motorista a todas as viagens
+          // 1. Inicializo a contagem de viagens do motorista (eu) recebebndo o número total de caronas
+          contagemViagensPassageiro["Jamil"] = caronas.length;
+
+          // 2. Adiciona (o motorista) aos sets de passageiros por dia.
           Object.keys(caronasPorDia).forEach(function (data) {
             caronasPorDia[data].add("Jamil");
           });
 
-          // Calculo o custo da gasolina para cada dia e divido entre os passageiros da viagem
+          // 3. Calculo o custo da gasolina para cada dia e divido entre os passageiros da viagem
           valoresIndividuais = {};
+          if (!valoresIndividuais["Jamil"]) {
+            valoresIndividuais["Jamil"] = {
+              viagens: 0,
+              valorTotal: 0
+            };
+          }
           Object.keys(caronasPorDia).forEach(function (data) {
             var passageirosNaViagem = Array.from(caronasPorDia[data]);
             var numPessoasNaViagem = passageirosNaViagem.length;
-
-            // Custo da viagem do dia
+            var distanciaTotalDoDia = distanciasPorDia[data];
             var consumoPorKm = precoGasolina / mediaCarro;
-            var custoViagemDia = consumoPorKm * (distancia_ufsm * 2); // Ida e volta
-
-            // Divido o custo entre todos os passageiros que foram no dia
+            var custoViagemDia = consumoPorKm * (distanciaTotalDoDia * 2);
             var custoPorPessoa = custoViagemDia / numPessoasNaViagem;
             passageirosNaViagem.forEach(function (pessoa) {
               if (!valoresIndividuais[pessoa]) {
@@ -87,43 +104,45 @@ var getCalculo = exports.getCalculo = /*#__PURE__*/function () {
                   valorTotal: 0
                 };
               }
-              valoresIndividuais[pessoa].viagens += 1;
               valoresIndividuais[pessoa].valorTotal += custoPorPessoa;
             });
           });
 
-          // Resultado final
+          // 4. Resultado final
           res.status(200).json({
             precoGasolina: precoGasolina,
             mediaCarro: mediaCarro,
             detalhesPassageiros: Object.keys(valoresIndividuais).reduce(function (acc, pessoa) {
+              // Atribui a contagem de viagens correta para cada passageiro, incluindo eu Jamil.
               acc[pessoa] = {
-                viagens: valoresIndividuais[pessoa].viagens,
-                valorTotal: parseFloat(valoresIndividuais[pessoa].valorTotal.toFixed(2)) // Arredondar para 2 casas decimais
+                viagens: contagemViagensPassageiro[pessoa] || 0,
+                // Pega do objeto que conta caronas individuais
+                valorTotal: parseFloat(valoresIndividuais[pessoa].valorTotal.toFixed(2))
               };
               return acc;
             }, {})
           });
-          _context.next = 23;
+          _context.next = 28;
           break;
-        case 20:
-          _context.prev = 20;
+        case 24:
+          _context.prev = 24;
           _context.t0 = _context["catch"](8);
+          console.error("Erro no cálculo:", _context.t0);
           res.status(500).json({
-            error: "Erro ao calcular valores: ".concat(_context.t0.message, " ")
+            error: "Erro ao calcular valores: ".concat(_context.t0.message || _context.t0)
           });
-        case 23:
+        case 28:
         case "end":
           return _context.stop();
       }
-    }, _callee, null, [[8, 20]]);
+    }, _callee, null, [[8, 24]]);
   }));
   return function getCalculo(_x, _x2) {
     return _ref.apply(this, arguments);
   };
 }();
 var getQuantidadesViagensDia = exports.getQuantidadesViagensDia = /*#__PURE__*/function () {
-  var _ref3 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee2(req, res) {
+  var _ref2 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee2(req, res) {
     var _req$query2, mes, ano, dia, dataCompleta, caronas, quantidadesIndividuais;
     return _regeneratorRuntime().wrap(function _callee2$(_context2) {
       while (1) switch (_context2.prev = _context2.next) {
@@ -157,8 +176,8 @@ var getQuantidadesViagensDia = exports.getQuantidadesViagensDia = /*#__PURE__*/f
           caronas = _context2.sent;
           // Organizo as caronas por passageiro
           quantidadesIndividuais = {};
-          caronas.forEach(function (_ref4) {
-            var passageiro = _ref4.passageiro;
+          caronas.forEach(function (_ref3) {
+            var passageiro = _ref3.passageiro;
             var nomePassageiro = passageiro.PAS_NOME;
             if (!quantidadesIndividuais[nomePassageiro]) {
               quantidadesIndividuais[nomePassageiro] = {
@@ -188,6 +207,6 @@ var getQuantidadesViagensDia = exports.getQuantidadesViagensDia = /*#__PURE__*/f
     }, _callee2, null, [[4, 13]]);
   }));
   return function getQuantidadesViagensDia(_x3, _x4) {
-    return _ref3.apply(this, arguments);
+    return _ref2.apply(this, arguments);
   };
 }();
